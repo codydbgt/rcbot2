@@ -77,6 +77,8 @@
 #define MAX_VOICE_CMDS 32
 #define MIN_WPT_TOUCH_DIST 16.0f
 
+#define SOURCE_ENGINE SE_SDK2013
+
 // Interfaces from the engine
 extern IVEngineServer *engine;  // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern IFileSystem *filesystem;  // file I/O 

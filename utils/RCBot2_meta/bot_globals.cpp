@@ -50,7 +50,6 @@
 #endif
 
 #include <cmath>
-
 //caxanga334: SDK 2013 contains macros for std::min and std::max which causes errors when compiling
 #if SOURCE_ENGINE == SE_SDK2013 || SOURCE_ENGINE == SE_BMS
 #include "valve_minmax_off.h"
@@ -418,6 +417,14 @@ void CBotGlobals :: traceLine (Vector vSrc, Vector vDest, unsigned int mask, ITr
 	memset(&m_TraceResult,0,sizeof(trace_t));
 	ray.Init( vSrc, vDest );
 	enginetrace->TraceRay( ray, mask, pFilter, &m_TraceResult );
+}
+
+void CBotGlobals::traceHull(Vector vSrc, Vector vDest,Vector min ,Vector max,unsigned int mask, ITraceFilter* pFilter)
+{
+	Ray_t ray;
+	memset(&m_TraceResult, 0, sizeof(trace_t));
+	ray.Init(vSrc, vDest,min,max);
+	enginetrace->TraceRay(ray, mask, pFilter, &m_TraceResult);
 }
 
 float CBotGlobals :: quickTraceline (edict_t *pIgnore,Vector vSrc, Vector vDest)

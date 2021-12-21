@@ -28,10 +28,7 @@
  *    version.
  *
  */
-
-//#include "util_shared.h"
-
-
+#include "cbase.h"
 #include "engine_wrappers.h"
 
 #include "filesystem.h"
@@ -57,12 +54,14 @@
 #include "bot_getprop.h"
 #include "bot_fortress.h"
 #include "bot_wpt_dist.h"
-
+#include "util_shared.h"
 #include "logging.h"
 
 #include <cmath>
 #include <vector>    //bir3yk
 #include <algorithm>
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
 int CWaypoints::m_iNumWaypoints = 0;
 CWaypoint CWaypoints::m_theWaypoints[CWaypoints::MAX_WAYPOINTS];
 float CWaypoints::m_fNextDrawWaypoints = 0;
@@ -2370,7 +2369,7 @@ int CWaypoints :: addWaypoint ( CClient *pClient, const char *type1, const char 
 	return iIndex;
 }
 
-int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector start, int iFlags, bool bAutoPath, int iYaw, int iArea, float fRadius )
+int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector vOrigin, int iFlags, bool bAutoPath, int iYaw, int iArea, float fRadius )
 {
 	const int iIndex = freeWaypointIndex();
 
@@ -2387,94 +2386,85 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector start, int iFlags, bool
 	if (rcbot_wpt_autoradius.GetFloat() < 0) {
 		//-------------------------------------------------------------------------------------
 		// TODO bucky work on trace loops
+		
+		Vector start = vOrigin;
 		Vector ba, bb, o, _dir[3],ends[3];
 		float pheight=72.0f;
 		float dis;
 		float mdis = 1000.0f;
+		trace_t t;
 		_dir[0].Init(1, 0, 0);// north
 		_dir[1].Init(-1, 0, 0);// south
 		_dir[2].Init(0, 1, 0);//east 
 		_dir[3].Init(0, -1, 0);//west
 
-		Color lightgreen,darkgreen,lightred;
-		lightred.SetColor(252, 71, 58, 255);
+		Color lightgreen,darkgreen;
 		lightgreen.SetColor(0, 255, 81, 255);
 		darkgreen.SetColor(0, 97, 31, 255);
 		ConColorMsg(lightgreen, "");
-		ConColorMsg(lightgreen,"TEST GREEN MESSAGE\n");
+		ConColorMsg(lightgreen,"TEST GREEN MESSAGE");
 		//start in direction north and do a ever expanding trace hull
-		for (int _d = 0; _d <=3; _d++) {
-			Vector tend;
-			float dend=mdis;
-			for (int i = 0; i <=mdis; i++) {
+		for (int _d = 0; _d < 3; _d++) {
+			Vector end;
+			for (int i = 0; i < 1000; i++) {
 				float d;
-				Vector end;
+				
+			
 				//ba
 				ba.Init(0,0,0);
 
 				o.Init(-0.45, -0.45, 0);
 				o *= _dir[_d];
 				ba += o;
-				if (ba.x == 0)ba.x = -i;//width
-				else ba.y = -i;
+				if (ba.x == 0)ba.x = i;//width
+				else ba.y = i;
 
 				//bb
 				bb.Init(0,0,pheight);
 
-				o.Init(0.45, 0.45,0);
+				o.Init(0.45, 0.45, 0);
 				o *= _dir[_d];
 				bb += o;
 				if (bb.x == 0) bb.x = i;//width
 				else bb.y = i;
 
 				//trace start
-				const trace_t* t = CBotGlobals::getTraceResult();
-				CTraceFilterWorldAndPropsOnly filter;
-				o.Init(0,0,0);
-				o += _dir[_d];
-				o *= mdis;
-				CBotGlobals::traceHull(start,start + o, ba, bb, MASK_SOLID,&filter);
+				UTIL_TraceHull(start,end, ba,bb, MASK_SOLID, NULL, COLLISION_GROUP_NONE, &t);
+				if (!t.DidHitWorld())continue;
+				d = t.endpos.DistTo(start);
 
-				if (!t->DidHit())continue;
-				end = t->endpos;
-				d = end.DistTo(start);
-				if (d >= dend)continue;//looking for change of a smaller value
-				dend = d;
-				if (dend < 5) {//width hit wall
-					ConColorMsg(lightred, "\nHIT WALL?: dis=%f\n", dend);
+				if (d < 10) {//width hit wall
+					ConColorMsg(lightgreen, "HIT WALL?: dis=%f", d);
 					break;
 				}
-				
 				//TODO edge detection 
 
 				//
-				ConColorMsg(lightgreen, "dis=%f ", dend);
-				tend = end;
+				mdis = dis;
+				ConColorMsg(lightgreen, "dis=%f", d);
 			}
-			ConColorMsg(darkgreen, "\nend[%i]=x:%i y:%i z:%i\n",_d,tend.x,tend.y, tend.z);
-			ends[_d] = tend;
-			
+			ConColorMsg(lightgreen, "end[%i]=x:%i y:%i z:%i",_d,end.x,end.y,end.z);
+			ends[_d] = end;
 		}
 		//build 
 		
 		//center
 
-		float x,y;
+		float x,y,w,h;
 
 		for (int i = 0; i <=1; i++) {
 			
-			if (i==0)x = ends[0].DistTo(ends[1])/2;
-			else y =  ends[2].DistTo(ends[3])/2;
+			if (i==0)x = ends[i].DistTo(ends[i+1])/2;
+			else y +=  ends[i+2].DistTo(ends[i+3])/2;
 		}
-		start.x = ends[0].x-x;
-		start.y = ends[2].y-y;
-		ConColorMsg(darkgreen, "\ncenter=x:%i y:%i z:%i\n",start.x, start.y,start.z);
+		vOrigin.x = x;
+		vOrigin.y = y;
+		ConColorMsg(darkgreen, "center=x:%i y:%i z:%i",vOrigin.x, vOrigin.y,vOrigin.z);
 		//-------------------------------------------------------------------------------------
-		fRadius = 0;
 	}
 
 	///////////////////////////////////////////////////
-	m_theWaypoints[iIndex] = CWaypoint(start,iFlags);	
+	m_theWaypoints[iIndex] = CWaypoint(vOrigin,iFlags);	
 	m_theWaypoints[iIndex].setAim(iYaw);
 	m_theWaypoints[iIndex].setArea(iArea);
 	m_theWaypoints[iIndex].setRadius(fRadius);
@@ -2483,7 +2473,7 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector start, int iFlags, bool
 		m_iNumWaypoints++;	
 	///////////////////////////////////////////////////
 
-	const float fOrigin[3] = {start.x,start.y,start.z};
+	const float fOrigin[3] = {vOrigin.x,vOrigin.y,vOrigin.z};
 
 	CWaypointLocations::AddWptLocation(iIndex,fOrigin);
 	m_pVisibilityTable->workVisibilityForWaypoint(iIndex,true);

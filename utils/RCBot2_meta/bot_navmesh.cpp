@@ -36,6 +36,8 @@
 
 bool CNavMeshNavigator :: workRoute ( Vector vFrom, Vector vTo, bool *bFail, bool bRestart, bool bNoInterruptions, int iGoalId, int iConditions, int iDangerId )
 {
+
+	//TheNavMesh->GetNearestNavArea()
 	return true;
 }
 
@@ -46,6 +48,7 @@ Vector CNavMeshNavigator :: getNextPoint ()
 
 void CNavMeshNavigator :: updatePosition ()
 {
+
 }
 
 void CNavMeshNavigator :: freeMapMemory ()
@@ -66,7 +69,7 @@ bool CNavMeshNavigator :: hasNextPoint ()
 	return false;
 }
 
-void CNavMeshNavigator :: init ()
+void CNavMeshNavigator::init()
 {
-	//m_theNavMesh->Reset();
+	//if (!TheNavMesh->IsLoaded())return;
 }
