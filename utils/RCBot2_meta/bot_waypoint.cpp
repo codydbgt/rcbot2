@@ -2387,9 +2387,8 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector start, int iFlags, bool
 	if (rcbot_wpt_autoradius.GetFloat() < 0) {
 		//-------------------------------------------------------------------------------------
 		// TODO bucky work on trace loops
-		Vector ba, bb, o, _dir[3],ends[3];
+		Vector _dir[3],ends[3];
 		float pheight=72.0f;
-		float dis;
 		float mdis = 1000.0f;
 		_dir[0].Init(1, 0, 0);// north
 		_dir[1].Init(-1, 0, 0);// south
@@ -2408,7 +2407,7 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector start, int iFlags, bool
 			float dend=mdis;
 			for (int i = 0; i <=mdis; i++) {
 				float d;
-				Vector end;
+				Vector ba, bb, o, end;
 				//ba
 				ba.Init(0,0,0);
 
@@ -2419,28 +2418,34 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector start, int iFlags, bool
 				else ba.y = -i;
 
 				//bb
-				bb.Init(0,0,pheight);
+				bb.Init(0,0,0);
 
 				o.Init(0.45, 0.45,0);
 				o *= _dir[_d];
 				bb += o;
+				bb.z = pheight;
 				if (bb.x == 0) bb.x = i;//width
 				else bb.y = i;
 
 				//trace start
 				const trace_t* t = CBotGlobals::getTraceResult();
 				CTraceFilterWorldAndPropsOnly filter;
-				o.Init(0,0,0);
-				o += _dir[_d];
+				
+				o = _dir[_d];
 				o *= mdis;
-				CBotGlobals::traceHull(start,start + o, ba, bb, MASK_SOLID,&filter);
+
+				CBotGlobals::traceHull(start,start + o, ba, bb,MASK_NPCSOLID,&filter);
 
 				if (!t->DidHit())continue;
 				end = t->endpos;
 				d = end.DistTo(start);
 				if (d >= dend)continue;//looking for change of a smaller value
+
+				ConColorMsg(lightred, "\n offset=x:%f y:%f z:%f ", o.x, o.y, o.z);
+				ConColorMsg(lightred, "\n ba=x:%f y:%f z:%f ", ba.x, ba.y, ba.z);
+				ConColorMsg(lightred, "\n bb=x:%f y:%f z:%f ", bb.x, bb.y, bb.z);
 				dend = d;
-				if (dend < 5) {//width hit wall
+				if (dend < 1) {//width hit wall
 					ConColorMsg(lightred, "\nHIT WALL?: dis=%f\n", dend);
 					break;
 				}
@@ -2451,7 +2456,8 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector start, int iFlags, bool
 				ConColorMsg(lightgreen, "dis=%f ", dend);
 				tend = end;
 			}
-			ConColorMsg(darkgreen, "\nend[%i]=x:%i y:%i z:%i\n",_d,tend.x,tend.y, tend.z);
+			ConColorMsg(darkgreen, "\nend[%i]=x:%f y:%f z:%f\n",_d,tend.x,tend.y, tend.z);
+			ConColorMsg(darkgreen, "\nEnddis=%f\n", tend.DistTo(start) );
 			ends[_d] = tend;
 			
 		}
@@ -2460,15 +2466,15 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector start, int iFlags, bool
 		//center
 
 		float x,y;
-
-		for (int i = 0; i <=1; i++) {
 			
-			if (i==0)x = ends[0].DistTo(ends[1])/2;
-			else y =  ends[2].DistTo(ends[3])/2;
-		}
-		start.x = ends[0].x-x;
-		start.y = ends[2].y-y;
-		ConColorMsg(darkgreen, "\ncenter=x:%i y:%i z:%i\n",start.x, start.y,start.z);
+		x = ends[0].DistTo(ends[1])/2;
+		y =  ends[2].DistTo(ends[3])/2;
+
+		start.x = ends[1].x+x;
+		start.y = ends[3].y+y;
+
+		ConColorMsg(lightred, "\nshift: x=%f y=%f\n",x,y);
+		ConColorMsg(lightred, "\ncenter=x:%f y:%f z:%f\n",start.x, start.y,start.z);
 		//-------------------------------------------------------------------------------------
 		fRadius = 0;
 	}
