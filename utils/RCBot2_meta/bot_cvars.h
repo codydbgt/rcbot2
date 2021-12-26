@@ -1,6 +1,7 @@
 #ifndef __BOT_CVARS_H__
 #define __BOT_CVARS_H__
 
+extern ConVar rcbot_wpt_auto_res;
 extern ConVar rcbot_tf2_debug_spies_cloakdisguise;
 extern ConVar rcbot_tf2_medic_letgotime;
 extern ConVar rcbot_const_point_master_offset;

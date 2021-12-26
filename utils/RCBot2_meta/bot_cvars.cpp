@@ -6,6 +6,10 @@
 
 static ICvar* s_pCVar;
 
+//bucky was here
+ConVar rcbot_wpt_auto_res("rcbot_wpt_auto_res", "5",0, "res is the for loop += ammount for accuracy adjustment");
+
+
 ConVar rcbot_tf2_debug_spies_cloakdisguise("rcbot_tf2_debug_spies_cloakdisguise", "1", 0, "Debug command : allow spy bots to cloak and disguise");
 ConVar rcbot_tf2_medic_letgotime("rcbot_tf2_medic_letgotime", "0.4", 0, "Time for medic to let go of medigun to switch players");
 ConVar rcbot_tf2_pyro_airblast("rcbot_tf2_pyro_airblast_ammo", "50", 0, "Ammo must be above this to airblast -- if 200 airblast will be disabled");
