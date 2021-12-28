@@ -2404,22 +2404,21 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector origin, int iFlags, boo
 		//use fars
 		Vector vfar;
 		float fars[1];
-		int cycle=0,_i;
-		while (cycle <= 2) {//3 loops :(
+		
+		int _i;
 			for (int _d = 0; _d <= 3; _d++) {//DONT TOUCH LOL
 			//================================================================|	
 				Vector tend;
-				float dend = mdis;
+				float dend , area = 0;
 				_i = _d <= 1 ? 0 : 1;
 				ConColorMsg(lightgreen, "Axes: %i\n",_i);
-				for (int i = 1; i <= mdis; i +=1) {
-					if (cycle==2 && i+ rcbot_wpt_auto_res.GetInt() > mwidth[_i])break;
-					float d;
+				for (int i = 1; i<= mdis; i++) {
+					float d ,a;
 					Vector ba, bb, o, end;
 					//ba
 					ba.Init(-0.45, -0.45, 0);
 					ba *= _dir[_d];
-					ba.z += 10;//BUMPS?
+					ba.z += 10;//bots can navigate over small steps 
 					if (ba.x == 0)ba.x = -i;//width
 					else ba.y = -i;
 
@@ -2443,44 +2442,41 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector origin, int iFlags, boo
 
 					if (!t->DidHit())continue;
 					end = t->endpos;
-					//csurface_t wall = t->surface;
-
 					d = end.DistTo(start);
-					if (d >= dend-1)continue;//looking for change of a smaller value
+					a = d * (i*2); 
 
+					if (a<=area+ rcbot_wpt_auto_res.GetInt())continue;//looking for lareger area
+
+					if (t->startsolid) {
+						ConColorMsg(darkgreen, "S");
+						continue;
+					}
 					//ConColorMsg(lightred, "\n offset=x:%f y:%f z:%f ", o.x, o.y, o.z);
-					ConColorMsg(lightred, "\n ba=x:%f y:%f z:%f ", ba.x, ba.y, ba.z);
-					ConColorMsg(darkgreen, " bb=x:%f y:%f z:%f \n", bb.x, bb.y, bb.z);
-					ConColorMsg(lightgreen, "dis=%f ", dend);
-					dend = d;
-					if (d < 5) {//width hit wall
-						ConColorMsg(lightred, "\nHIT WALL?: dis=%f\n", dend);
+					//ConColorMsg(lightred, "\n ba=x:%f y:%f z:%f ", ba.x, ba.y, ba.z);
+					//ConColorMsg(darkgreen, " bb=x:%f y:%f z:%f \n", bb.x, bb.y, bb.z);
+					
+					
+					if (end.DistTo(start) < 2) {//width hit wall
+						ConColorMsg(lightred, "\nHIT WALL?: dis=%f\n",d);
 						break;
 					}
-
+					dend = d;
+					area = a;
+					ConColorMsg(lightgreen, "dis=%f width=%i area=%f", dend, i,area);
+				     
 					//TODO edge detection 
 
 					//
 					
 					tend = end;
-					if (cycle == 1 && d >= fars[_i]){
-						mwidth[_i] = i;
-						ConColorMsg(lightred, "\nNew Max width=%i\n", i);
-					}
-					
-					
 				}
 				float d = tend.DistTo(start);
-				ConColorMsg(darkgreen, "\nend[%i]=x:%f y:%f z:%f\n", _d, tend.x, tend.y, tend.z);
-				ConColorMsg(darkgreen, "Enddis=%f\n", d);
+			//	ConColorMsg(darkgreen, "\nend[%i]=x:%f y:%f z:%f\n", _d, tend.x, tend.y, tend.z);
+				ConColorMsg(darkgreen, "\nEnddis=%f\n", d);
 				ends[_d] = tend;
-				if (cycle==0 && d > fars[_i]) {
-					fars[_i] = d;
-	
-					ConColorMsg(lightred, "New Far=%f\n", d);
-				}
+				
 				//----------------------------------------------------
-				if (cycle==2) {//for debuging
+				if (true) {//for debuging
 			///////////////////////////////////////////////////
 					iIndex = freeWaypointIndex();
 					if (iIndex == -1)
@@ -2504,9 +2500,7 @@ int CWaypoints :: addWaypoint ( edict_t *pPlayer, Vector origin, int iFlags, boo
 				}
 				//----------------------------------------------------
 			}
-			ConColorMsg(lightred, "\nCYCLE END............");
-			cycle++;
-		}
+		
 
 		
 		//center
